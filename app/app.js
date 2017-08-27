@@ -227,44 +227,63 @@ app.sendData = function(data)
 	}
 };
 
-function arrayBufferToString(buffer){
-
-    var bufView = new Uint16Array(buffer);
-    var length = bufView.length;
-    var result = '';
-    var addition = Math.pow(2,16)-1;
-
-    for(var i = 0;i<length;i+=addition){
-
-        if(i + addition > length){
-            addition = length - i;
-        }
-        result += String.fromCharCode.apply(null, bufView.subarray(i,i+addition));
-    }
-
-    return result;
-
+function ArrayBufferToString(buffer) {
+	//return BinToText(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Int8Array(buffer))))
+    return BinaryToString(String.fromCharCode.apply(null, Array.prototype.slice.apply(new Int8Array(buffer))));
 }
 
-app.receivedData = function(data)
+
+function BinToText(binary) {
+    var value = parseInt(binary,2).toString(10);
+	return value;
+}
+
+function BinaryToString(binary) {
+    var error;
+
+    try {
+        return decodeURIComponent(escape(binary));
+    } catch (_error) {
+        error = _error;
+		console.log(error);
+        if (error instanceof URIError) {
+            return binary;
+        } else {
+            throw error;
+        }
+    }
+}
+
+byteArrayToLong = function(/*byte[]*/byteArray) {
+    var value = 0;
+    for ( var i = byteArray.length - 1; i >= 0; i--) {
+        value = (value * 256) + byteArray[i];
+    }
+    return value;
+};
+
+var byteArray = [];
+var index = 0;
+//$('#analogDigitalResult').append(index + ": " + int_8 + ",");
+app.receivedData = function(TXBuf)
 {
+	index++;
 	if (app.connected)
-	{
-		var value = arrayBufferToString(data)
-		$('#analogDigitalResult').html(value);
-		// var arr = Uint8Array(new ArrayBuffer(data));
-		// //var digit = parseInt(data, 2);
-	    // app.dataBuffer.push(arr[0])
-		// //$('#analogDigitalResult').html(data + "<br />");
-		// //$('#analogDigitalResult').html(app.dataBuffer[0]);
-		// if (app.dataBuffer.length == 2)
-		// {
-		// 	signal = app.dataBuffer[0]*256 + app.dataBuffer[1];
-		// 	app.dataBuffer = [];
-		// }
-		// //var arr = new Uint16Array(signal);
-		// //$('#analogDigitalResult').html(arr[0]);
-		// app.drawDiagram(arr[0])
+	{	
+
+		byteArray.push(TXBuf)
+		if (byteArray.length == 2)
+		{
+		// 	// Do something with each byte in the array
+				//var value = byteArray[0]*256 & byteArray[1];
+				console.log("TXBuf Number " + ": " + TXBuf + "\n")
+				var first = new DataView(byteArray[0]).getUint8(0)
+				// var second = new DataView().getUint8(0, true)
+				console.log("1st Number " + ": " + first + "\n")
+				// console.log("2nd Number " + ": " + second + "\n")
+				byteArray = [];
+		}
+
 	}
 	else
 	{
@@ -299,7 +318,7 @@ var index = 1;
 app.drawDiagram = function(Signal)
 {
 	// // Add recent values.
-	app.dataPoints.push(Signal/1000);
+	app.dataPoints.push(Signal);
 	app.clearFullCanvas()
 
 
@@ -319,7 +338,7 @@ app.drawDiagram = function(Signal)
 			app.context.moveTo(index-1, app.dataPoints[index-1]); //previous point
 			app.context.lineTo(index, app.dataPoints[index]); // plot future point
 			app.context.stroke();
-			//$('#analogDigitalResult').html(index.toString() + ", " + app.dataPoints[index].toString());
+			$('#analogDigitalResult').html(index.toString() + ", " + app.dataPoints[index].toString());
 		}
 		
 	}
